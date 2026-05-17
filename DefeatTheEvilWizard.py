@@ -30,7 +30,7 @@ class Druid(Character):
     def __init__(self, name):
         super().__init__(name, health=110, attack_power=30)
 
-# Create Paladin class
+# Paladin class (inherits from Character)
 class Paladin(Character):
     def __init__(self, name):
         super().__init__(name, health=160, attack_power=20)
@@ -40,9 +40,9 @@ class EvilWizard(Character):
     def __init__(self, name):
         super().__init__(name, health=150, attack_power=15)
 
-    def regenerate(self):
-        self.health += 5
-        print(f"{self.name} regenerates 5 health! Current health: {self.health}")
+    def regenerate(self, healAmount=5):
+        self.health += healAmount
+        print(f"{self.name} regenerates {healAmount} health! Current health: {self.health}")
 
 
 
@@ -61,9 +61,9 @@ def create_character():
     elif class_choice == '2':
         return Mage(name)
     elif class_choice == '3':
-        pass  # Implement Archer class
+        return Druid(name)
     elif class_choice == '4':
-        pass  # Implement Paladin class
+        return Paladin(name)
     else:
         print("Invalid choice. Defaulting to Warrior.")
         return Warrior(name)
