@@ -15,10 +15,50 @@ class Character:
     def display_stats(self):
         print(f"{self.name}'s Stats - Health: {self.health}/{self.max_health}, Attack Power: {self.attack_power}")
 
+# Status effects class
+class StatusEffect:
+    def __init__(self, name, duration, attack_modifier=0, defense_modifier=0, health_modifier=0):
+        self.name = name
+        self.duration = duration
+        self.attack_modifier = attack_modifier
+        self.defense_modifier = defense_modifier
+        self.health_modifier = health_modifier
+    
+    def tick(self):
+        self.duration -= 1
+
 # Warrior class (inherits from Character)
 class Warrior(Character):
     def __init__(self, name):
         super().__init__(name, health=140, attack_power=25)
+        self.isRaging = False
+        self.rageTurnsRemaining = 0
+        self.isDisarming = False
+
+    def showAbilities(self):
+
+        choosing = True
+        while choosing:
+            print("1. Rage - Increase damage by 15 but double damage taken for 3 turns.")
+            print("2. Disarm - Deal 5 damage and reduce the enemies damage by 10 for 3 turns.")
+            choice = input("Choice: ").strip()
+            if choice == "1":
+                self.rage()
+                choosing = False
+            elif choice == "2":
+                self.disarm()
+                choosing = False
+            else:
+                print("\nInvalid input. Please select from the available choices.\n")
+
+    def rage(self):
+        self.attack_power = 25
+        self.attack_power += 15
+        self.isRaging = True
+        self.rageTurnsRemaining = 3
+
+    def disarm(self):
+        self.isDisarming = True
 
 # Mage class (inherits from Character)
 class Mage(Character):
@@ -38,13 +78,15 @@ class Paladin(Character):
 # EvilWizard class (inherits from Character)
 class EvilWizard(Character):
     def __init__(self, name):
-        super().__init__(name, health=150, attack_power=15)
+        super().__init__(name, health=175, attack_power=15)
+        self.isDisarmed = False
+        self.disarmedTurnsRemaining = 0
 
     def regenerate(self, healAmount=5):
         self.health += healAmount
         print(f"{self.name} regenerates {healAmount} health! Current health: {self.health}")
 
-
+# ^-^-^-^-^-^-CLASSES GO ABOVE-^-^-^-^-^-^ #
 
 def create_character():
     print("Choose your character class:")
@@ -70,24 +112,56 @@ def create_character():
 
 def battle(player, wizard):
     while wizard.health > 0 and player.health > 0:
-        print("\n--- Your Turn ---")
-        print("1. Attack")
-        print("2. Use Special Ability")
-        print("3. Heal")
-        print("4. View Stats")
 
-        choice = input("Choose an action: ")
+        choosing = True
+        while choosing:
+            print("\n--- Your Turn ---")
+            print("1. Attack")
+            print("2. Use Special Ability")
+            print("3. Heal")
+            print("4. View Stats")
+            choice = input("Choose an action: ")
 
-        if choice == '1':
-            player.attack(wizard)
-        elif choice == '2':
-            pass  # Implement special abilities
-        elif choice == '3':
-            pass  # Implement heal method
-        elif choice == '4':
-            player.display_stats()
-        else:
-            print("Invalid choice. Try again.")
+            if choice == '1':
+                player.attack(wizard)
+                choosing = False
+            elif choice == '2':
+                player.showAbilities()
+                choosing = False
+            elif choice == '3':
+                choosing = False  # Implement heal method
+            elif choice == '4':
+                player.display_stats()
+            else:
+                print("Invalid choice. Try again.")
+
+        # Logic for Warriors abilities.
+        try:
+            # Logic for Warrior Rage ability.
+            if player.isRaging == True and player.rageTurnsRemaining == 3:
+                wizard.attack_power *= 2
+                player.rageTurnsRemaining -= 1
+            elif player.isRaging == True and player.rageTurnsRemaining > 0:
+                player.rageTurnsRemaining -= 1
+            elif player.isRaging == True and player.rageTurnsRemaining == 0:
+                player.isRaging = False
+                player.attack_power = 25
+                wizard.attack_power = 15
+
+            # Logic for Warrior Disarm ability.
+            if player.isDisarming == True and wizard.isDisarmed == False:
+                wizard.isDisarmed = True
+                wizard.disarmedTurnsRemaining = 2
+                wizard.attack_power -= 10
+                wizard.health -= 5
+            elif player.isDisarming == True and wizard.disarmedTurnsRemaining > 0:
+                wizard.disarmedTurnsRemaining -= 1
+            elif player.isDisarming == True and wizard.disarmedTurnsRemaining == 0:
+                wizard.attack_power = 15
+                player.isDisarming = False
+                wizard.isDisarmed = False
+        except:
+            continue
 
         if wizard.health > 0:
             wizard.regenerate()
