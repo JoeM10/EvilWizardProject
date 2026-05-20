@@ -30,6 +30,13 @@ class Character:
         print(f"Defense: {self.get_defense()}")
         print(f"Active Effects: {self.active_effect_names}")
 
+    def heal(self, amount):
+        newTotal = self.health + amount
+        if newTotal > self.max_health:
+            self.health = self.max_health
+        else:
+            self.health = newTotal
+
     # Use the class StatusEffect to add a status to an entity.
     def add_status_effect(self, status_effect):
         self.status_effects.append(status_effect)
@@ -39,9 +46,9 @@ class Character:
     def tick_status_effects(self):
         for effect in self.status_effects:
             if effect.stat == "dot":
-                self.health -= effect.status_modifier
+                self.heal -= effect.status_modifier
             elif effect.stat == "hot":
-                self.health += effect.status_modifier
+                self.heal(effect.status_modifier)
             effect.tick()
             if effect.duration <= 0:
                 self.status_effects.remove(effect)
@@ -136,6 +143,7 @@ class Mage(Character):
                     for effect in self.status_effects:
                         if effect.name == "Used Fireball":
                             print(f"\nYou cannot use Fireball for another {effect.duration} turns.\n")
+                            return False
                 else:
                     self.fireball(opponent)
                     self.choosing = False
@@ -189,39 +197,50 @@ class Druid(Character):
 # Paladin class (inherits from Character)
 class Paladin(Character):
     def __init__(self, name):
-        super().__init__(name, health=160, attack_power=20, defense=15)
+        super().__init__(name, health=160, attack_power=15, defense=15)
 
     def showAbilities(self, opponent):
         self.choosing = True
         while self.choosing:
-            print("\n1. ")
-            print("\n2. ")
+            print("\n1. Law of Equality - Deal 20 damage and heal 20 health. Can only be used every 4 turns.")
+            print("\n2. Hammer of Justice - Throw a hammer that deals 30 damage. Can only be used every 2 turns.")
             print("\n3. Return.\n")
             self.choice = input("Choice: ").strip()
             if self.choice == "1":
                 if "Law of Equality Cooldown" in self.active_effect_names:
                     for effect in self.status_effects:
                         if effect.name == "Law of Equality Cooldown":
-                            print(f"You have achieved Equilibrium too recently. Turns remaining {effect.duration}.")
+                            print(f"\nYou have achieved Equilibrium too recently. Turns remaining {effect.duration}.")
+                            return False
                 else:
                     self.law_of_equality(opponent)
                     self.choosing = False
-                return True
+                    return True
             elif self.choice == "2":
-                return True
+                if "Hammer of Justice Cooldown" in self.active_effect_names:
+                    for effect in self.status_effects:
+                        if effect.name == "Hammer of Justice Cooldown":
+                            print(f"\nHamme of Justice is on cooldown. Turns remaining {effect.duration}.")
+                            return False
+                else:
+                    self.hammer_of_justice(opponent)
+                    return True
             elif self.choice == "3":
                 return False
             else:
                 print("\nInvalid input. Please select from the available choices.\n")
 
     # Paladin abilities.
-    # Law of Equality - Deal 20 damage and heal 20 health. Can only be used every 2 turns.
+    # Law of Equality - Deal 20 damage and heal 20 health. Can only be used every 4 turns.
     def law_of_equality(self, opponent):
-        self.add_status_effect(StatusEffect("Law of Equality Cooldown", "health", 2, 0))
+        self.add_status_effect(StatusEffect("Law of Equality Cooldown", "health", 4, 0))
         self.attack(opponent, 20)
-        self.health += 20
+        self.heal(20)
 
-        # Hammer of Justice - Throw a hammer that deals 30 damage. Can only be used every 2 turns.
+    # Hammer of Justice - Throw a hammer that deals 30 damage. Can only be used every 2 turns.
+    def hammer_of_justice(self, opponent):
+        self.add_status_effect(StatusEffect("Hammer of Justice Cooldown", "attack", 2, 0))
+        self.attack(opponent, 30)
 
 # EvilWizard class (inherits from Character)
 class EvilWizard(Character):
@@ -264,9 +283,9 @@ def battle(player, wizard):
         choosing = True
         while choosing:
             print("\n--- Your Turn ---")
-            print("1. Attack")
+            print(f"1. Attack - {player.get_attack_power()} damage")
             print("2. Use Special Ability")
-            print("3. Heal")
+            print("3. Heal - Heal for 15 health")
             print("4. View Stats")
             choice = input("Choose an action: ")
 
@@ -279,7 +298,8 @@ def battle(player, wizard):
                 else:
                     continue
             elif choice == '3':
-                choosing = False  # Implement heal method
+                player.heal(15)
+                choosing = False
             elif choice == '4':
                 player.display_stats()
             else:
