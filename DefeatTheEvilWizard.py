@@ -7,27 +7,45 @@ class Character:
         self.defense = defense
         self.max_health = health
         self.status_effects = []
+        self.active_effect_names = []
 
-    def attack(self, opponent):
-        self.damage_dealt = self.get_attack_power() - opponent.get_defense()
-        if self.damage_dealt < 0:
-            self.damage_dealt = 0
-        opponent.health -= self.damage_dealt
-        print(f"{self.name} attacks {opponent.name} for {self.damage_dealt} damage!")
-        if opponent.health <= 0:
-            print(f"{opponent.name} has been defeated!")
+    def attack(self, opponent, set_fixed_damage=0):
+        # Use set_fixed_damage to deal a specific amount of damage regarless of effects and modifiers.
+        if set_fixed_damage != 0:
+            opponent.health -= set_fixed_damage
+            print(f"{self.name} attacks {opponent.name} for {set_fixed_damage} damage!")
+        else:
+            self.damage_dealt = self.get_attack_power() - opponent.get_defense()
+            if self.damage_dealt < 0:
+                self.damage_dealt = 0
+            opponent.health -= self.damage_dealt
+            print(f"{self.name} attacks {opponent.name} for {self.damage_dealt} damage!")
+            if opponent.health <= 0:
+                print(f"{opponent.name} has been defeated!")
 
     def display_stats(self):
-        print(f"{self.name}'s Stats - Health: {self.get_health()}/{self.max_health}, Attack Power: {self.get_attack_power()}")
+        print(f"\n- {self.name}'s Stats -")
+        print(f"Health: {self.get_health()}/{self.max_health}")
+        print(f"Attack Power: {self.get_attack_power()}")
+        print(f"Defense: {self.get_defense()}")
+        print(f"Active Effects: {self.active_effect_names}")
 
+    # Use the class StatusEffect to add a status to an entity.
     def add_status_effect(self, status_effect):
         self.status_effects.append(status_effect)
+        self.active_effect_names.append(status_effect.name)
 
+    # Manages the tick durations and removes expired effects.
     def tick_status_effects(self):
         for effect in self.status_effects:
+            if effect.stat == "dot":
+                self.health -= effect.status_modifier
+            elif effect.stat == "hot":
+                self.health += effect.status_modifier
             effect.tick()
             if effect.duration <= 0:
                 self.status_effects.remove(effect)
+                self.active_effect_names.remove(effect.name)
 
     def get_attack_power(self):
         self.total_attack = self.attack_power
@@ -72,42 +90,138 @@ class Warrior(Character):
     def __init__(self, name):
         super().__init__(name, health=140, attack_power=25, defense=10)
 
-    def showAbilities(self):
+    def showAbilities(self, opponent):
         self.choosing = True
         while self.choosing:
-            print("1. Rage - Increase damage by 15 but reduce defense to 0 for 3 turns.")
-            print("2. Disarm - Deal 5 damage and reduce the enemies damage by 10 for 3 turns.")
-            choice = input("Choice: ").strip()
-            if choice == "1":
+            print("\n1. Rage - Increase damage by 15 but reduce defense to 0 for 3 turns.")
+            print("\n2. Disarm - Deal 5 damage and reduce the enemies damage by 10 for 3 turns.")
+            print("\n3. Return.\n")
+            self.choice = input("Choice: ").strip()
+            if self.choice == "1":
                 self.rage()
                 self.choosing = False
-            elif choice == "2":
-                self.disarm()
+                return True
+            elif self.choice == "2":
+                self.disarm(opponent)
                 self.choosing = False
+                return True
+            elif self.choice == "3":
+                return False
             else:
                 print("\nInvalid input. Please select from the available choices.\n")
 
+# Warrior Abilities.
     def rage(self):
-        self.add_status_effect(StatusEffect("Rage", "attack", duration=3, status_modifier=15))
-        self.add_status_effect(StatusEffect("Rage", "defense", duration=3, status_modifier=-self.get_defense()))
+        self.add_status_effect(StatusEffect("Rage Damage up!", "attack", duration=3, status_modifier=15))
+        self.add_status_effect(StatusEffect("Rage Defense down!", "defense", duration=3, status_modifier=-self.get_defense()))
 
     def disarm(self, opponent):
         opponent.add_status_effect(StatusEffect("Disarm", "attack", duration=3, status_modifier=-10))
+        self.attack(opponent, 5)
 
 # Mage class (inherits from Character)
 class Mage(Character):
     def __init__(self, name):
         super().__init__(name, health=100, attack_power=35)
 
+    def showAbilities(self, opponent):
+        self.choosing = True
+        while self.choosing:
+            print("\n1. Fireball - A powerful spell that deals 70 damage but can only be used 1 time every 4 turns.")
+            print("\n2. Mage Armor - Increase defense by 10 for 3 turns.")
+            print("\n3. Return.\n")
+            self.choice = input("Choice: ").strip()
+            if self.choice == "1":
+                if "Used Fireball" in self.active_effect_names:
+                    for effect in self.status_effects:
+                        if effect.name == "Used Fireball":
+                            print(f"\nYou cannot use Fireball for another {effect.duration} turns.\n")
+                else:
+                    self.fireball(opponent)
+                    self.choosing = False
+                    return True
+            elif self.choice == "2":
+                self.mage_armor()
+                return True
+            elif self.choice == "3":
+                return False
+            else:
+                print("\nInvalid input. Please select from the available choices.\n")
+
+# Mage Abilities
+    def fireball(self, opponent):
+        self.attack(opponent, 70)
+        self.add_status_effect(StatusEffect("Fireball on cooldown", "attack", 4, 0))
+
+    def mage_armor(self):
+        self.add_status_effect(StatusEffect("Mage Armor", "defense", 3, 10))
+
 # Druid class (inherits from Character)
 class Druid(Character):
     def __init__(self, name):
         super().__init__(name, health=110, attack_power=30, defense=5)
 
+    def showAbilities(self, opponent):
+        self.choosing = True
+        while self.choosing:
+            print("\n1. Entangle - Wrap spiked vines around the enemy, dealing 10 damage every turn for 3 turns.\n")
+            print("\n2. Rejuvenate - Heal for 10 health, and an extra 10 health every turn for 3 turns.")
+            print("\n3. Return.\n")
+            self.choice = input("Choice: ").strip()
+            if self.choice == "1":
+                self.entangle(opponent)
+                return True
+            elif self.choice == "2":
+                self.rejuvenate()
+                return True
+            elif self.choice == "3":
+                return False
+            else:
+                print("\nInvalid input. Please select from the available choices.\n")
+
+    # Druid abilities.
+    def entangle(self, opponent):
+        opponent.add_status_effect(StatusEffect("Entangled", "dot", 3, 10))
+        
+    def rejuvenate(self):
+        self.add_status_effect(StatusEffect("Rejuvenate", "hot", 3, 10))
+
 # Paladin class (inherits from Character)
 class Paladin(Character):
     def __init__(self, name):
         super().__init__(name, health=160, attack_power=20, defense=15)
+
+    def showAbilities(self, opponent):
+        self.choosing = True
+        while self.choosing:
+            print("\n1. ")
+            print("\n2. ")
+            print("\n3. Return.\n")
+            self.choice = input("Choice: ").strip()
+            if self.choice == "1":
+                if "Law of Equality Cooldown" in self.active_effect_names:
+                    for effect in self.status_effects:
+                        if effect.name == "Law of Equality Cooldown":
+                            print(f"You have achieved Equilibrium too recently. Turns remaining {effect.duration}.")
+                else:
+                    self.law_of_equality(opponent)
+                    self.choosing = False
+                return True
+            elif self.choice == "2":
+                return True
+            elif self.choice == "3":
+                return False
+            else:
+                print("\nInvalid input. Please select from the available choices.\n")
+
+    # Paladin abilities.
+    # Law of Equality - Deal 20 damage and heal 20 health. Can only be used every 2 turns.
+    def law_of_equality(self, opponent):
+        self.add_status_effect(StatusEffect("Law of Equality Cooldown", "health", 2, 0))
+        self.attack(opponent, 20)
+        self.health += 20
+
+        # Hammer of Justice - Throw a hammer that deals 30 damage. Can only be used every 2 turns.
 
 # EvilWizard class (inherits from Character)
 class EvilWizard(Character):
@@ -160,8 +274,10 @@ def battle(player, wizard):
                 player.attack(wizard)
                 choosing = False
             elif choice == '2':
-                player.showAbilities()
-                choosing = False
+                if player.showAbilities(wizard):
+                    choosing = False
+                else:
+                    continue
             elif choice == '3':
                 choosing = False  # Implement heal method
             elif choice == '4':
