@@ -1,3 +1,5 @@
+import random
+
 # Base Character class
 class Character:
     def __init__(self, name, health, attack_power, defense=0):
@@ -15,7 +17,8 @@ class Character:
             opponent.health -= set_fixed_damage
             print(f"{self.name} attacks {opponent.name} for {set_fixed_damage} damage!")
         else:
-            self.damage_dealt = self.get_attack_power() - opponent.get_defense()
+            self.randomize_damage = random.randint(self.get_attack_power() - 10, self.get_attack_power())
+            self.damage_dealt = self.randomize_damage - opponent.get_defense()
             if self.damage_dealt < 0:
                 self.damage_dealt = 0
             opponent.health -= self.damage_dealt
