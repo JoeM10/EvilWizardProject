@@ -197,7 +197,7 @@ class Druid(Character):
 # Paladin class (inherits from Character)
 class Paladin(Character):
     def __init__(self, name):
-        super().__init__(name, health=160, attack_power=15, defense=15)
+        super().__init__(name, health=160, attack_power=15, defense=10)
 
     def showAbilities(self, opponent):
         self.choosing = True
@@ -250,7 +250,7 @@ class EvilWizard(Character):
         self.disarmedTurnsRemaining = 0
 
     def regenerate(self, healAmount=5):
-        self.health += healAmount
+        self.heal(5)
         print(f"{self.name} regenerates {healAmount} health! Current health: {self.health}")
 
 # ^-^-^-^-^-^-CLASSES GO ABOVE-^-^-^-^-^-^ #
