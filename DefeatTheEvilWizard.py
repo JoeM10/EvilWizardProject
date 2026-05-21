@@ -240,7 +240,7 @@ class Paladin(Character):
                 if "Hammer of Justice Cooldown" in self.active_effect_names:
                     for effect in self.status_effects:
                         if effect.name == "Hammer of Justice Cooldown":
-                            print(f"\nHamme of Justice is on cooldown. Turns remaining {effect.duration}.")
+                            print(f"\nHammer of Justice is on cooldown. Turns remaining {effect.duration}.")
                             return False
                 else:
                     self.hammer_of_justice(opponent)
