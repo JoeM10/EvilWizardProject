@@ -112,7 +112,7 @@ class Warrior(Character):
         while self.choosing:
             print(f"\n--- {self.name}'s Special Abilities ---")
             print("\n1. Rage - Increase attack power by 15 but reduce defense to 0 for 3 turns.")
-            print("\n2. Disarm - Deal 5 damage and reduce the enemies damage by 10 for 3 turns.")
+            print("\n2. Disarm - Deal 5 damage and reduce the enemies damage by 5 for 3 turns.")
             print("\n3. Return.\n")
             self.choice = input("Choice: ").strip()
             if self.choice == "1":
@@ -136,7 +136,7 @@ class Warrior(Character):
 
     def disarm(self, opponent):
         print(f'\n{self.name} used the ability "Disarm"!')
-        opponent.add_status_effect(StatusEffect("Disarm", "attack", duration=3, status_modifier=-10))
+        opponent.add_status_effect(StatusEffect("Disarm", "attack", duration=3, status_modifier=-5))
         self.attack(opponent, 5)
 
 # Mage class (inherits from Character)
